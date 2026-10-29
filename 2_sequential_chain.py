@@ -1,0 +1,42 @@
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_groq import ChatGroq
+import os
+
+# change the folder in langsmith
+os.environ["LANGCHAIN_PROJECT"] = "Sequential LLM App"
+load_dotenv()
+
+prompt1 = PromptTemplate(
+    template="Generate a detailed report on {topic}", input_variables=["topic"]
+)
+
+prompt2 = PromptTemplate(
+    template="Generate a 5 pointer summary from the following text \n {text}",
+    input_variables=["text"],
+)
+
+# model = ChatOpenAI()
+model = ChatGroq(
+    model="qwen/qwen3.8-27b", api_key=os.getenv("GROQ_API_KEY"), max_tokens=43
+)
+
+parser = StrOutputParser()
+
+chain = prompt1 | model | parser | prompt2 | model | parser
+
+# tags and metadata
+config = {
+    "run_name": "sequential_chain",
+    "tags": {"llm-app", "report-generation", "summarization"},
+    "metadata": {
+        "model1": "qwen/qwen3.8-27b",
+        "model_temp": 0.7,
+        "parser": "StrOutputparser",
+    },
+}
+result = chain.invoke({"topic": "Unemployment in India"}, config=config)
+
+print(result)
